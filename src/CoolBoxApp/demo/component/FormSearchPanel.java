@@ -26,402 +26,540 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
+import java.util.function.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class FormSearchPanel extends JPanel {
 
-    private LookAndFeel oldTheme = UIManager.getLookAndFeel();
-    private final int SEARCH_MAX_LENGTH = 50;
+    // Constants
+    private static final int SEARCH_MAX_LENGTH = 50;
+    
+    // Functional interfaces for callbacks
+    @FunctionalInterface
+    private interface ItemEventHandler {
+        void handle(Item item);
+    }
+    
+    @FunctionalInterface
+    private interface SearchValidator {
+        boolean validate(SystemForm form, String searchTerm);
+    }
+    
+    // Immutable fields
+    private final LookAndFeel oldTheme = UIManager.getLookAndFeel();
     private final Map<SystemForm, Class<? extends Form>> formsMap;
-    private final List<Item> listItems = new ArrayList<>();
+    private final List<Item> listItems;
+    private final SearchValidator searchValidator;
+    
+    // UI Components
+    private JTextField textSearch;
+    private JPanel panelResult;
 
     public FormSearchPanel(Map<SystemForm, Class<? extends Form>> formsMap) {
-        this.formsMap = formsMap;
+        this.formsMap = Collections.unmodifiableMap(new HashMap<>(formsMap));
+        this.listItems = new ArrayList<>();
+        this.searchValidator = this::matchesSearch;
         init();
     }
 
     private void init() {
+        setupLayout();
+        setupSearchField();
+        setupResultPanel();
+        setupScrollPane();
+        installSearchField();
+    }
+
+    private void setupLayout() {
         setLayout(new MigLayout("fillx,insets 0,wrap", "[fill,500]"));
+    }
+
+    private void setupSearchField() {
         textSearch = new JTextField();
-        panelResult = new JPanel(new MigLayout("insets 3 10 3 10,fillx,wrap", "[fill]"));
-        textSearch.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Busqueda...");
-        textSearch.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSVGIcon("CoolBoxApp/demo/icons/search.svg", 0.4f));
-        textSearch.putClientProperty(FlatClientProperties.STYLE, "" +
-                "border:3,3,3,3;" +
-                "background:null;" +
-                "showClearButton:true;");
+        configureSearchFieldProperties();
         add(textSearch, "gap 17 17 0 0");
         add(new JSeparator(), "height 2!");
+    }
+
+    private void configureSearchFieldProperties() {
+        textSearch.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Búsqueda...");
+        textSearch.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, 
+            new FlatSVGIcon("CoolBoxApp/demo/icons/search.svg", 0.4f));
+        textSearch.putClientProperty(FlatClientProperties.STYLE, 
+            "border:3,3,3,3;background:null;showClearButton:true;");
+    }
+
+    private void setupResultPanel() {
+        panelResult = new JPanel(new MigLayout("insets 3 10 3 10,fillx,wrap", "[fill]"));
+    }
+
+    private void setupScrollPane() {
+        JScrollPane scrollPane = createConfiguredScrollPane();
+        add(scrollPane);
+    }
+
+    private JScrollPane createConfiguredScrollPane() {
         JScrollPane scrollPane = new JScrollPane(panelResult);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getVerticalScrollBar().setUnitIncrement(10);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-        scrollPane.getVerticalScrollBar().putClientProperty(FlatClientProperties.STYLE, "" +
-                "trackArc:$ScrollBar.thumbArc;" +
-                "thumbInsets:0,3,0,3;" +
-                "trackInsets:0,3,0,3;" +
-                "width:12;");
-        add(scrollPane);
-        installSearchField();
+        
+        configureScrollBarStyle(scrollPane);
+        return scrollPane;
     }
 
-    public final void formCheck() {
-        if (oldTheme != UIManager.getLookAndFeel()) {
-            oldTheme = UIManager.getLookAndFeel();
-            SwingUtilities.updateComponentTreeUI(this);
-        }
+    private void configureScrollBarStyle(JScrollPane scrollPane) {
+        scrollPane.getVerticalScrollBar().putClientProperty(FlatClientProperties.STYLE,
+            "trackArc:$ScrollBar.thumbArc;thumbInsets:0,3,0,3;trackInsets:0,3,0,3;width:12;");
+    }
+
+    public void formCheck() {
+        Optional.of(UIManager.getLookAndFeel())
+            .filter(currentTheme -> !currentTheme.equals(oldTheme))
+            .ifPresent(theme -> SwingUtilities.updateComponentTreeUI(this));
     }
 
     private void installSearchField() {
+        setupDocumentLengthLimit();
+        setupSearchDocumentListener();
+        setupKeyboardNavigation();
+    }
+
+    private void setupDocumentLengthLimit() {
         textSearch.setDocument(new PlainDocument() {
             @Override
             public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
-                if (getLength() + str.length() <= SEARCH_MAX_LENGTH) {
-                    super.insertString(offs, str, a);
-                }
+                Optional.ofNullable(str)
+                    .filter(s -> getLength() + s.length() <= SEARCH_MAX_LENGTH)
+                    .ifPresent(s -> {
+                        try {
+                            super.insertString(offs, s, a);
+                        } catch (BadLocationException e) {
+                            // Log error in production
+                        }
+                    });
             }
         });
+    }
+
+    private void setupSearchDocumentListener() {
         textSearch.getDocument().addDocumentListener(new DocumentListener() {
-            private String text;
+            private String previousText = "";
 
             @Override
-            public void insertUpdate(DocumentEvent e) {
-                search();
-            }
-
+            public void insertUpdate(DocumentEvent e) { performSearch(); }
             @Override
-            public void removeUpdate(DocumentEvent e) {
-                search();
-            }
-
+            public void removeUpdate(DocumentEvent e) { performSearch(); }
             @Override
-            public void changedUpdate(DocumentEvent e) {
-                search();
-            }
+            public void changedUpdate(DocumentEvent e) { performSearch(); }
 
-            private void search() {
-                String st = textSearch.getText().trim().toLowerCase(); // Convert search term to lowercase
-                if (!st.equals(text)) {
-                    text = st;
-                    panelResult.removeAll();
-                    listItems.clear();
-                    if (st.isEmpty()) {
-                        showRecentResult();
-                    } else {
-                        for (Map.Entry<SystemForm, Class<? extends Form>> entry : formsMap.entrySet()) {
-                            SystemForm s = entry.getKey();
-                            // Compare both name and description with lower cased search term
-                            if (s.name().toLowerCase().contains(st)
-                                    || s.description().toLowerCase().contains(st)
-                                    || checkTags(s.tags(), st)) {
-                                if (MyMenuValidation.validation(entry.getValue())) {
-                                    Item item = new Item(s, entry.getValue(), false, false);
-                                    panelResult.add(item);
-                                    listItems.add(item);
-                                }
-                            }
-                        }
-                        if (!listItems.isEmpty()) {
-                            setSelected(0);
-                        } else {
-                            panelResult.add(createNoResult(st));
-                        }
-                        panelResult.repaint();
-                        updateLayout();
-                    }
-                }
-            }
-
-            private boolean checkTags(String[] tags, String st) {
-                if (tags.length == 0) return false;
-                return Arrays.stream(tags).anyMatch(s -> s.contains(st));
-            }
-        });
-        textSearch.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                switch (e.getKeyCode()) {
-                    case KeyEvent.VK_UP:
-                        move(true);
-                        break;
-                    case KeyEvent.VK_DOWN:
-                        move(false);
-                        break;
-                    case KeyEvent.VK_ENTER:
-                        showForm();
-                        break;
+            private void performSearch() {
+                String currentText = normalizeSearchText(textSearch.getText());
+                
+                if (!currentText.equals(previousText)) {
+                    previousText = currentText;
+                    executeSearch(currentText);
                 }
             }
         });
     }
 
-    private void updateLayout() {
-        Container container = SwingUtilities.getAncestorOfClass(ModalContainer.class, FormSearchPanel.this);
-        if (container != null) {
-            container.revalidate();
-        }
+    private String normalizeSearchText(String text) {
+        return Optional.ofNullable(text)
+            .map(String::trim)
+            .map(String::toLowerCase)
+            .orElse("");
     }
 
-    private void showForm() {
-        int index = getSelectedIndex();
-        if (index != -1) {
-            listItems.get(index).showForm();
-        }
-    }
-
-    private void setSelected(int index) {
-        for (int i = 0; i < listItems.size(); i++) {
-            listItems.get(i).setSelected(index == i);
-        }
-    }
-
-    private int getSelectedIndex() {
-        for (int i = 0; i < listItems.size(); i++) {
-            if (listItems.get(i).isSelected()) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private void move(boolean up) {
-        if (listItems.isEmpty()) return;
-        int index = getSelectedIndex();
-        int size = listItems.size();
-        if (index == -1) {
-            if (up) {
-                index = listItems.size() - 1;
-            } else {
-                index = 0;
-            }
+    private void executeSearch(String searchTerm) {
+        clearResults();
+        
+        if (searchTerm.isEmpty()) {
+            showRecentResults();
         } else {
-            if (up) {
-                index = (index == 0) ? size - 1 : index - 1;
-            } else {
-                index = (index == size - 1) ? 0 : index + 1;
-            }
+            performFormSearch(searchTerm);
         }
-        setSelected(index);
     }
 
-    private void showRecentResult() {
-        List<Item> recentSearch = getRecentSearch(false);
-        List<Item> favoriteSearch = getRecentSearch(true);
+    private void clearResults() {
         panelResult.removeAll();
         listItems.clear();
-        if (recentSearch != null && !recentSearch.isEmpty()) {
-            panelResult.add(createLabel("Reciente"));
-            for (Item item : recentSearch) {
-                panelResult.add(item);
-                listItems.add(item);
-            }
-        }
+    }
 
-        if (favoriteSearch != null && !favoriteSearch.isEmpty()) {
-            panelResult.add(createLabel("Favorito"));
-            for (Item item : favoriteSearch) {
-                panelResult.add(item);
-                listItems.add(item);
-            }
-        }
-        if (listItems.isEmpty()) {
-            panelResult.add(new NoRecentResult());
+    private void performFormSearch(String searchTerm) {
+        List<Item> searchResults = createSearchResults(searchTerm);
+        
+        if (searchResults.isEmpty()) {
+            showNoResults(searchTerm);
         } else {
-            setSelected(0);
+            displaySearchResults(searchResults);
         }
+        
+        refreshUI();
+    }
+
+    private List<Item> createSearchResults(String searchTerm) {
+        return formsMap.entrySet().stream()
+            .filter(entry -> searchValidator.validate(entry.getKey(), searchTerm))
+            .filter(entry -> MyMenuValidation.validation(entry.getValue()))
+            .map(entry -> createSearchItem(entry.getKey(), entry.getValue()))
+            .collect(Collectors.toList());
+    }
+
+    private Item createSearchItem(SystemForm systemForm, Class<? extends Form> formClass) {
+        return new Item(systemForm, formClass, false, false, 
+            this::handleItemShow, this::handleItemRemove, this::handleItemFavorite);
+    }
+
+    private boolean matchesSearch(SystemForm form, String searchTerm) {
+        return Stream.of(
+                form.name().toLowerCase(),
+                form.description().toLowerCase()
+            )
+            .anyMatch(field -> field.contains(searchTerm)) ||
+            Arrays.stream(form.tags())
+                .map(String::toLowerCase)
+                .anyMatch(tag -> tag.contains(searchTerm));
+    }
+
+    private void showNoResults(String searchTerm) {
+        panelResult.add(createNoResultComponent(searchTerm));
+    }
+
+    private void displaySearchResults(List<Item> results) {
+        results.forEach(panelResult::add);
+        listItems.addAll(results);
+        setSelectedIndex(0);
+    }
+
+    private void refreshUI() {
+        panelResult.repaint();
         updateLayout();
     }
 
-    private JLabel createLabel(String title) {
+    private void setupKeyboardNavigation() {
+        textSearch.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                handleKeyNavigation(e.getKeyCode());
+            }
+        });
+    }
+
+    private void handleKeyNavigation(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.VK_UP -> moveSelection(true);
+            case KeyEvent.VK_DOWN -> moveSelection(false);
+            case KeyEvent.VK_ENTER -> showSelectedForm();
+        }
+    }
+
+    private void updateLayout() {
+        Optional.ofNullable(SwingUtilities.getAncestorOfClass(ModalContainer.class, this))
+            .ifPresent(Container::revalidate);
+    }
+
+    private void showSelectedForm() {
+        getSelectedIndex()
+            .map(listItems::get)
+            .ifPresent(Item::showForm);
+    }
+
+    private void setSelectedIndex(int index) {
+        IntStream.range(0, listItems.size())
+            .forEach(i -> listItems.get(i).setSelected(i == index));
+    }
+
+    private OptionalInt getSelectedIndex() {
+        return IntStream.range(0, listItems.size())
+            .filter(i -> listItems.get(i).isSelected())
+            .findFirst();
+    }
+
+    private void moveSelection(boolean up) {
+        if (listItems.isEmpty()) return;
+        
+        int currentIndex = getSelectedIndex().orElse(-1);
+        int newIndex = calculateNewIndex(currentIndex, up, listItems.size());
+        setSelectedIndex(newIndex);
+    }
+
+    private int calculateNewIndex(int currentIndex, boolean up, int size) {
+        if (currentIndex == -1) {
+            return up ? size - 1 : 0;
+        }
+        
+        return up ? 
+            (currentIndex == 0 ? size - 1 : currentIndex - 1) :
+            (currentIndex == size - 1 ? 0 : currentIndex + 1);
+    }
+
+    private void showRecentResults() {
+        List<Item> recentItems = getRecentSearchItems(false);
+        List<Item> favoriteItems = getRecentSearchItems(true);
+        
+        clearResults();
+        
+        addSectionIfNotEmpty("Reciente", recentItems);
+        addSectionIfNotEmpty("Favorito", favoriteItems);
+        
+        if (listItems.isEmpty()) {
+            panelResult.add(new NoRecentResult());
+        } else {
+            setSelectedIndex(0);
+        }
+        
+        updateLayout();
+    }
+
+    private void addSectionIfNotEmpty(String title, List<Item> items) {
+        if (!items.isEmpty()) {
+            panelResult.add(createSectionLabel(title));
+            items.forEach(panelResult::add);
+            listItems.addAll(items);
+        }
+    }
+
+    private JLabel createSectionLabel(String title) {
         JLabel label = new JLabel(title);
-        label.putClientProperty(FlatClientProperties.STYLE, "" +
-                "font:bold +1;" +
-                "border:5,15,5,15;");
+        label.putClientProperty(FlatClientProperties.STYLE, "font:bold +1;border:5,15,5,15;");
         return label;
     }
 
-    private List<Item> getRecentSearch(boolean favorite) {
-        String[] recentSearch = DemoPreferences.getRecentSearch(favorite);
-        if (recentSearch == null) {
-            return null;
-        }
-        List<Item> list = new ArrayList<>();
-        for (String s : recentSearch) {
-            Class<? extends Form> classForm = getClassForm(s);
-            if (MyMenuValidation.validation(classForm)) {
-                Item item = createRecentItem(s, favorite);
-                if (item != null) {
-                    list.add(item);
-                }
-            }
-        }
-        return list;
+    private List<Item> getRecentSearchItems(boolean favorite) {
+        return Optional.ofNullable(DemoPreferences.getRecentSearch(favorite))
+            .map(Arrays::stream)
+            .orElse(Stream.empty())
+            .map(name -> createRecentItem(name, favorite))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .filter(this::isValidItem)
+            .collect(Collectors.toList());
     }
 
-    private Class<? extends Form> getClassForm(String name) {
-        for (Map.Entry<SystemForm, Class<? extends Form>> entry : formsMap.entrySet()) {
-            if (entry.getKey().name().equals(name)) {
-                return entry.getValue();
-            }
-        }
-        return null;
+    private boolean isValidItem(Item item) {
+        return MyMenuValidation.validation(item.getFormClass());
     }
 
-    private Item createRecentItem(String name, boolean favorite) {
-        for (Map.Entry<SystemForm, Class<? extends Form>> entry : formsMap.entrySet()) {
-            if (entry.getKey().name().equals(name)) {
-                return new Item(entry.getKey(), entry.getValue(), true, favorite);
-            }
-        }
-        return null;
+    private Optional<Class<? extends Form>> getFormClass(String name) {
+        return formsMap.entrySet().stream()
+            .filter(entry -> entry.getKey().name().equals(name))
+            .map(Map.Entry::getValue)
+            .findFirst();
     }
 
-    private Component createNoResult(String text) {
+    private Optional<Item> createRecentItem(String name, boolean favorite) {
+        return formsMap.entrySet().stream()
+            .filter(entry -> entry.getKey().name().equals(name))
+            .map(entry -> new Item(entry.getKey(), entry.getValue(), true, favorite,
+                this::handleItemShow, this::handleItemRemove, this::handleItemFavorite))
+            .findFirst();
+    }
+
+    private Component createNoResultComponent(String searchText) {
         JPanel panel = new JPanel(new MigLayout("insets 15 5 15 5,al center,gapx 1"));
-        JLabel label = new JLabel("No hay resultados para \"");
-        JLabel labelEnd = new JLabel("\"");
-        label.putClientProperty(FlatClientProperties.STYLE, "" +
-                "foreground:$Label.disabledForeground;");
-        labelEnd.putClientProperty(FlatClientProperties.STYLE, "" +
-                "foreground:$Label.disabledForeground;");
-        JLabel labelText = new JLabel(text);
-
-        panel.add(label);
-        panel.add(labelText);
-        panel.add(labelEnd);
+        
+        JLabel prefixLabel = createDisabledLabel("No hay resultados para \"");
+        JLabel searchLabel = new JLabel(searchText);
+        JLabel suffixLabel = createDisabledLabel("\"");
+        
+        Stream.of(prefixLabel, searchLabel, suffixLabel)
+            .forEach(panel::add);
+        
         return panel;
+    }
+
+    private JLabel createDisabledLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.putClientProperty(FlatClientProperties.STYLE, "foreground:$Label.disabledForeground;");
+        return label;
+    }
+
+    // Event handlers
+    private void handleItemShow(Item item) {
+        item.showForm();
+    }
+
+    private void handleItemRemove(Item item) {
+        item.removeRecent();
+    }
+
+    private void handleItemFavorite(Item item) {
+        item.addFavorite();
     }
 
     public void clearSearch() {
         if (!textSearch.getText().isEmpty()) {
             textSearch.setText("");
         } else {
-            showRecentResult();
+            showRecentResults();
         }
     }
 
     public void searchGrabFocus() {
-        textSearch.grabFocus();
+        textSearch.requestFocusInWindow();
     }
 
-    private JTextField textSearch;
-    private JPanel panelResult;
-
+    // Inner Classes
     private static class NoRecentResult extends JPanel {
-
         public NoRecentResult() {
-            init();
-        }
-
-        private void init() {
             setLayout(new MigLayout("insets 15 5 15 5,al center"));
-            JLabel label = new JLabel("No hay busquedas recientes");
-            label.putClientProperty(FlatClientProperties.STYLE, "" +
-                    "foreground:$Label.disabledForeground;" +
-                    "font:bold;");
+            JLabel label = new JLabel("No hay búsquedas recientes");
+            label.putClientProperty(FlatClientProperties.STYLE, 
+                "foreground:$Label.disabledForeground;font:bold;");
             add(label);
         }
     }
 
     private class Item extends JButton {
-
         private final SystemForm data;
-        private final Class<? extends Form> form;
+        private final Class<? extends Form> formClass;
         private final boolean isRecent;
         private final boolean isFavorite;
+        private final ItemEventHandler onShow;
+        private final ItemEventHandler onRemove;
+        private final ItemEventHandler onFavorite;
         private Component itemSource;
 
-        public Item(SystemForm data, Class<? extends Form> form, boolean isRecent, boolean isFavorite) {
+        public Item(SystemForm data, Class<? extends Form> formClass, boolean isRecent, 
+                   boolean isFavorite, ItemEventHandler onShow, ItemEventHandler onRemove, 
+                   ItemEventHandler onFavorite) {
             this.data = data;
-            this.form = form;
+            this.formClass = formClass;
             this.isRecent = isRecent;
             this.isFavorite = isFavorite;
+            this.onShow = onShow;
+            this.onRemove = onRemove;
+            this.onFavorite = onFavorite;
             init();
         }
 
         private void init() {
-            setFocusable(false);
-            setHorizontalAlignment(JButton.LEADING);
-            setLayout(new MigLayout("insets 3 3 3 0,filly,gapy 2", "[]push[]"));
-            putClientProperty(FlatClientProperties.STYLE, "" +
-                    "background:null;" +
-                    "arc:10;" +
-                    "borderWidth:0;" +
-                    "focusWidth:0;" +
-                    "innerFocusWidth:0;" +
-                    "[light]selectedBackground:lighten($Button.selectedBackground,9%)");
-            JLabel labelDescription = new JLabel(data.description());
-            labelDescription.putClientProperty(FlatClientProperties.STYLE, "" +
-                    "foreground:$Label.disabledForeground;");
-            add(new JLabel(data.name()), "cell 0 0");
-            add(labelDescription, "cell 0 1");
-            if (!isRecent) {
-                add(new JLabel(new FlatMenuArrowIcon()), "cell 1 0,span 1 2");
-            } else {
-                add(createRecentOption(), "cell 1 0,span 1 2");
-            }
-            addActionListener(e -> {
-                if (itemSource == null) {
-                    clearSelected();
-                    setSelected(true);
-                    showForm();
-                } else if (itemSource.getName().equals("remover")) {
-                    removeRecent();
-                } else if (itemSource.getName().equals("favoritos")) {
-                    addFavorite();
-                }
-            });
+            configureButton();
+            setupLayout();
+            addComponents();
+            setupActionListener();
         }
 
-        private void clearSelected() {
-            for (Component com : getParent().getComponents()) {
-                if (com instanceof JButton) {
-                    ((JButton) com).setSelected(false);
-                }
+        private void configureButton() {
+            setFocusable(false);
+            setHorizontalAlignment(JButton.LEADING);
+            putClientProperty(FlatClientProperties.STYLE,
+                "background:null;arc:10;borderWidth:0;focusWidth:0;innerFocusWidth:0;" +
+                "[light]selectedBackground:lighten($Button.selectedBackground,9%)");
+        }
+
+        private void setupLayout() {
+            setLayout(new MigLayout("insets 3 3 3 0,filly,gapy 2", "[]push[]"));
+        }
+
+        private void addComponents() {
+            add(new JLabel(data.name()), "cell 0 0");
+            add(createDescriptionLabel(), "cell 0 1");
+            add(createActionComponent(), "cell 1 0,span 1 2");
+        }
+
+        private JLabel createDescriptionLabel() {
+            JLabel label = new JLabel(data.description());
+            label.putClientProperty(FlatClientProperties.STYLE, "foreground:$Label.disabledForeground;");
+            return label;
+        }
+
+        private Component createActionComponent() {
+            return isRecent ? createRecentOptions() : new JLabel(new FlatMenuArrowIcon());
+        }
+
+        private void setupActionListener() {
+            addActionListener(e -> handleAction());
+        }
+
+        private void handleAction() {
+            Optional.ofNullable(itemSource)
+                .map(Component::getName)
+                .ifPresentOrElse(this::handleNamedAction, this::handleDefaultAction);
+        }
+
+        private void handleNamedAction(String actionName) {
+            switch (actionName) {
+                case "remover" -> onRemove.handle(this);
+                case "favoritos" -> onFavorite.handle(this);
             }
+        }
+
+        private void handleDefaultAction() {
+            clearAllSelections();
+            setSelected(true);
+            onShow.handle(this);
+        }
+
+        private void clearAllSelections() {
+            Stream.of(getParent().getComponents())
+                .filter(JButton.class::isInstance)
+                .map(JButton.class::cast)
+                .forEach(button -> button.setSelected(false));
         }
 
         protected void showForm() {
             ModalDialog.closeModal(FormSearch.ID);
-            Drawer.setSelectedItemClass(form);
+            Drawer.setSelectedItemClass(formClass);
+            
             if (!isFavorite) {
                 DemoPreferences.addRecentSearch(data.name(), false);
             }
         }
 
-        protected Component createRecentOption() {
+        protected Component createRecentOptions() {
             JPanel panel = new JPanel(new MigLayout("insets n 0 n 0,fill,gapx 2", "", "[fill]"));
             panel.setOpaque(false);
-            JButton cmdRemove = createButton("remover", "clear.svg", 0.35f, "Label.foreground", 0.9f);
-            if (!isFavorite) {
-                JButton cmdFavorite = createButton("favoritos", "favorite.svg", 0.4f, "Component.accentColor", 0.9f);
-                panel.add(cmdFavorite);
-            } else {
-                JLabel label = new JLabel(new SVGIconUIColor("CoolBoxApp/demo/icons/favorite_filled.svg", 0.4f, "Component.accentColor", 0.8f));
-                label.putClientProperty(FlatClientProperties.STYLE, "" +
-                        "border:3,3,3,3;");
-                panel.add(label);
-            }
+            
+            addFavoriteComponent(panel);
             panel.add(new JSeparator(JSeparator.VERTICAL), "gapy 5 5");
-            panel.add(cmdRemove);
+            panel.add(createActionButton("remover", "clear.svg", 0.35f, "Label.foreground", 0.9f));
+            
             return panel;
         }
 
-        private JButton createButton(String name, String icon, float scale, String hoverKey, float alpha) {
-            SVGIconUIColor svgIcon = new SVGIconUIColor("CoolBoxApp/demo/icons/" + icon, scale, "Label.disabledForeground", alpha);
+        private void addFavoriteComponent(JPanel panel) {
+            if (isFavorite) {
+                panel.add(createFavoriteIndicator());
+            } else {
+                panel.add(createActionButton("favoritos", "favorite.svg", 0.4f, "Component.accentColor", 0.9f));
+            }
+        }
+
+        private JLabel createFavoriteIndicator() {
+            JLabel label = new JLabel(new SVGIconUIColor(
+                "CoolBoxApp/demo/icons/favorite_filled.svg", 0.4f, "Component.accentColor", 0.8f));
+            label.putClientProperty(FlatClientProperties.STYLE, "border:3,3,3,3;");
+            return label;
+        }
+
+        private JButton createActionButton(String name, String icon, float scale, String hoverKey, float alpha) {
+            SVGIconUIColor svgIcon = new SVGIconUIColor(
+                "CoolBoxApp/demo/icons/" + icon, scale, "Label.disabledForeground", alpha);
+            
             JButton button = new JButton(svgIcon);
+            configureActionButton(button, name, svgIcon, hoverKey);
+            
+            return button;
+        }
+
+        private void configureActionButton(JButton button, String name, SVGIconUIColor svgIcon, String hoverKey) {
             button.setName(name);
             button.setFocusable(false);
             button.setContentAreaFilled(false);
             button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             button.setModel(getModel());
-            button.putClientProperty(FlatClientProperties.STYLE, "" +
-                    "margin:3,3,3,3;");
+            button.putClientProperty(FlatClientProperties.STYLE, "margin:3,3,3,3;");
+            
+            setupButtonHoverEffects(button, svgIcon, hoverKey);
+        }
 
+        private void setupButtonHoverEffects(JButton button, SVGIconUIColor svgIcon, String hoverKey) {
             button.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseEntered(MouseEvent e) {
@@ -435,67 +573,91 @@ public class FormSearchPanel extends JPanel {
                     itemSource = null;
                 }
             });
-            return button;
         }
 
         protected void removeRecent() {
             DemoPreferences.removeRecentSearch(data.name(), isFavorite);
+            removeFromParent();
+            
+            if (listItems.isEmpty()) {
+                showEmptyState();
+            } else {
+                removeEmptySectionIfNeeded();
+            }
+            
+            updateLayout();
+        }
+
+        private void removeFromParent() {
             panelResult.remove(this);
             listItems.remove(this);
-            if (listItems.isEmpty()) {
-                panelResult.removeAll();
-                panelResult.add(new NoRecentResult());
-            } else {
-                if (getCount(isFavorite) == 0) {
-                    if (isFavorite) {
-                        panelResult.remove(panelResult.getComponentCount() - 1);
-                    } else {
-                        panelResult.remove(0);
-                    }
-                }
+        }
+
+        private void showEmptyState() {
+            panelResult.removeAll();
+            panelResult.add(new NoRecentResult());
+        }
+
+        private void removeEmptySectionIfNeeded() {
+            if (countItemsOfType(isFavorite) == 0) {
+                int labelIndex = isFavorite ? panelResult.getComponentCount() - 1 : 0;
+                panelResult.remove(labelIndex);
             }
-            updateLayout();
         }
 
         protected void addFavorite() {
             DemoPreferences.addRecentSearch(data.name(), true);
-            int[] index = getFirstFavoriteIndex();
-            panelResult.remove(this);
-            listItems.remove(this);
-            Item item = new Item(data, form, isRecent, true);
-            if (index == null) {
-                panelResult.add(createLabel("Favorito"));
-                panelResult.add(item);
-                listItems.add(item);
-            } else {
-                panelResult.remove(this);
-                listItems.remove(this);
-                panelResult.add(item, index[1] - 1);
-                listItems.add(index[0] - 1, item);
-            }
-            if (getCount(false) == 0) {
-                panelResult.remove(0);
-            }
+            removeFromParent();
+            
+            Item favoriteItem = new Item(data, formClass, isRecent, true, onShow, onRemove, onFavorite);
+            insertFavoriteItem(favoriteItem);
+            
+            removeRecentSectionIfEmpty();
             updateLayout();
         }
 
-        private int getCount(boolean favorite) {
-            int count = 0;
-            for (Item item : listItems) {
-                if (item.isFavorite == favorite) {
-                    count++;
-                }
-            }
-            return count;
+        private void insertFavoriteItem(Item favoriteItem) {
+            getFirstFavoriteIndex()
+                .ifPresentOrElse(
+                    index -> insertAt(favoriteItem, index),
+                    () -> appendAsFavorite(favoriteItem)
+                );
         }
 
-        private int[] getFirstFavoriteIndex() {
-            for (int i = 0; i < listItems.size(); i++) {
-                if (listItems.get(i).isFavorite) {
-                    return new int[]{i, panelResult.getComponentZOrder(listItems.get(i))};
-                }
-            }
-            return null;
+        private void insertAt(Item item, int[] indices) {
+            panelResult.add(item, indices[1] - 1);
+            listItems.add(indices[0] - 1, item);
         }
+
+        private void appendAsFavorite(Item item) {
+            panelResult.add(createSectionLabel("Favorito"));
+            panelResult.add(item);
+            listItems.add(item);
+        }
+
+        private void removeRecentSectionIfEmpty() {
+            if (countItemsOfType(false) == 0) {
+                panelResult.remove(0);
+            }
+        }
+
+        private long countItemsOfType(boolean favorite) {
+            return listItems.stream()
+                .mapToInt(item -> item.isFavorite == favorite ? 1 : 0)
+                .sum();
+        }
+
+        private Optional<int[]> getFirstFavoriteIndex() {
+            return IntStream.range(0, listItems.size())
+                .filter(i -> listItems.get(i).isFavorite)
+                .mapToObj(i -> new int[]{i, panelResult.getComponentZOrder(listItems.get(i))})
+                .findFirst();
+        }
+
+        // Getters
+        public Class<? extends Form> getFormClass() { return formClass; }
+        public SystemForm getData() { return data; }
+        public boolean isRecent() { return isRecent; }
+        public boolean isFavorite() { return isFavorite; }
     }
 }

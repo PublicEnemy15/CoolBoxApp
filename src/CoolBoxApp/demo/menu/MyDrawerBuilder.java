@@ -134,40 +134,40 @@ public class MyDrawerBuilder extends SimpleDrawerBuilder {
                         .subMenu("Notificar Item de Almacen", FormNotificar.class),
                 
                 new Item("Area de ventas", "components.svg")
-                        .subMenu("Ingreso Ventas", FormModal.class)
-                        .subMenu("Vistas Ventas", FormToast.class)
-                        .subMenu("Lista de reportes", FormDateTime.class)
-                        .subMenu("Color Picker", FormColorPicker.class)
-                        .subMenu("Avatar Icon", FormAvatarIcon.class)
-                        .subMenu("Slide Pane", FormSlidePane.class),
-                new Item("Email", "email.svg")
-                        .subMenu("Inbox")
+                        .subMenu("Ingreso Ventas", FormInput.class)
+                        .subMenu("Vistas Ventas", FormInput.class)
+                        .subMenu("Lista de reportes", FormInput.class)
+                        .subMenu("No definido", FormInput.class)
+                        .subMenu("No definido", FormInput.class)
+                        .subMenu("No definido", FormInput.class),
+                new Item("No definido", "undefined.svg")
+                        .subMenu("No definido")
                         .subMenu(
-                                new Item("Group Read")
-                                        .subMenu("Read 1")
-                                        .subMenu("Read 2")
+                                new Item("No definido")
+                                        .subMenu("No definido")
+                                        .subMenu("No definido")
                                         .subMenu(
-                                                new Item("Group Item")
-                                                        .subMenu("Item 1")
-                                                        .subMenu("Item 2")
-                                                        .subMenu("Item 3")
-                                                        .subMenu("Item 4")
-                                                        .subMenu("Item 5")
-                                                        .subMenu("Item 6")
+                                                new Item("No definido")
+                                                        .subMenu("No definido")
+                                                        .subMenu("No definido")
+                                                        .subMenu("No definido")
+                                                        .subMenu("No definido")
+                                                        .subMenu("No definido")
+                                                        .subMenu("No definido")
                                         )
-                                        .subMenu("Read 3")
-                                        .subMenu("Read 4")
-                                        .subMenu("Read 5")
+                                        .subMenu("No definido")
+                                        .subMenu("No definido")
+                                        .subMenu("No definido")
                         )
-                        .subMenu("Compost"),
-                new Item("Chat", "chat.svg"),
-                new Item("Calendar", "calendar.svg"),
+                        .subMenu("No definido"),
+                new Item("No definido", "undefined.svg"),
+                new Item("No definido", "undefined.svg"),
                 new Item.Label("OTROS"),
-                new Item("Plugin", "plugin.svg")
-                        .subMenu("Plugin 1")
-                        .subMenu("Plugin 2")
-                        .subMenu("Plugin 3"),
-                new Item("Setting", "setting.svg", FormSetting.class),
+                new Item("No definido", "undefined.svg")
+                        .subMenu("No definido")
+                        .subMenu("No definido")
+                        .subMenu("No definido"),
+                new Item("Ajustes", "setting.svg", FormSetting.class),
                 new Item("About", "about.svg"),
                 new Item("Logout", "logout.svg")
         };

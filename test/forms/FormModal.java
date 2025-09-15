@@ -1,4 +1,4 @@
-package CoolBoxApp.demo.forms;
+package forms;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.util.SystemInfo;
