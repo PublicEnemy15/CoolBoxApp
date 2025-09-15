@@ -28,17 +28,16 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
-import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class FormSearchPanel extends JPanel {
 
-    // Constants
+    // Constantes
     private static final int SEARCH_MAX_LENGTH = 50;
     
-    // Functional interfaces for callbacks
+    // Interfaces funcionales para callbacks
     @FunctionalInterface
     private interface ItemEventHandler {
         void handle(Item item);
@@ -49,13 +48,13 @@ public class FormSearchPanel extends JPanel {
         boolean validate(SystemForm form, String searchTerm);
     }
     
-    // Immutable fields
+    // Campos inmutables
     private final LookAndFeel oldTheme = UIManager.getLookAndFeel();
     private final Map<SystemForm, Class<? extends Form>> formsMap;
     private final List<Item> listItems;
     private final SearchValidator searchValidator;
     
-    // UI Components
+    // UI Componentes
     private JTextField textSearch;
     private JPanel panelResult;
 
@@ -139,7 +138,7 @@ public class FormSearchPanel extends JPanel {
                         try {
                             super.insertString(offs, s, a);
                         } catch (BadLocationException e) {
-                            // Log error in production
+                            // Log error en produccion
                         }
                     });
             }
@@ -265,8 +264,7 @@ public class FormSearchPanel extends JPanel {
 
     private void showSelectedForm() {
         getSelectedIndex()
-            .map(listItems::get)
-            .ifPresent(Item::showForm);
+            .ifPresent(index -> listItems.get(index).showForm());
     }
 
     private void setSelectedIndex(int index) {
@@ -404,7 +402,7 @@ public class FormSearchPanel extends JPanel {
         textSearch.requestFocusInWindow();
     }
 
-    // Inner Classes
+    // Clases internas
     private static class NoRecentResult extends JPanel {
         public NoRecentResult() {
             setLayout(new MigLayout("insets 15 5 15 5,al center"));

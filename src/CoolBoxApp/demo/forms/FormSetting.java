@@ -30,7 +30,7 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
-@SystemForm(name = "Setting", description = "application setting and configuration", tags = {"themes", "options"})
+@SystemForm(name = "Ajustes", description = "Ajustes de la aplicacion", tags = {"themes", "options"})
 public class FormSetting extends Form {
 
     public FormSetting() {
@@ -44,7 +44,7 @@ public class FormSetting extends Form {
                 "tabType:card");
 
         tabbedPane.addTab("Layout", createLayoutOption());
-        tabbedPane.addTab("Style", createStyleOption());
+        tabbedPane.addTab("Estilos", createStyleOption());
         add(tabbedPane, "gapy 1 0");
         add(createThemes());
     }
@@ -59,9 +59,9 @@ public class FormSetting extends Form {
 
     private Component createWindowsLayout() {
         JPanel panel = new JPanel(new MigLayout());
-        panel.setBorder(new TitledBorder("Windows layout"));
-        JCheckBox chRightToLeft = new JCheckBox("Right to Left", !getComponentOrientation().isLeftToRight());
-        JCheckBox chFullWindow = new JCheckBox("Full Window Content", FlatClientProperties.clientPropertyBoolean(FormManager.getFrame().getRootPane(), FlatClientProperties.FULL_WINDOW_CONTENT, false));
+        panel.setBorder(new TitledBorder("Disposcion de ventanas"));
+        JCheckBox chRightToLeft = new JCheckBox("De derecha a izquierda", !getComponentOrientation().isLeftToRight());
+        JCheckBox chFullWindow = new JCheckBox("Contenido en ventana completa", FlatClientProperties.clientPropertyBoolean(FormManager.getFrame().getRootPane(), FlatClientProperties.FULL_WINDOW_CONTENT, false));
         chRightToLeft.addActionListener(e -> {
             if (chRightToLeft.isSelected()) {
                 FormManager.getFrame().applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
@@ -80,14 +80,14 @@ public class FormSetting extends Form {
 
     private Component createDrawerLayout() {
         JPanel panel = new JPanel(new MigLayout());
-        panel.setBorder(new TitledBorder("Drawer layout"));
+        panel.setBorder(new TitledBorder("Disposcion del Drawer"));
 
-        JRadioButton jrLeft = new JRadioButton("Left");
-        JRadioButton jrLeading = new JRadioButton("Leading");
+        JRadioButton jrLeft = new JRadioButton("Izquierda");
+        JRadioButton jrLeading = new JRadioButton("Principal");
         JRadioButton jrTrailing = new JRadioButton("Trailing");
-        JRadioButton jrRight = new JRadioButton("Right");
-        JRadioButton jrTop = new JRadioButton("Top");
-        JRadioButton jrBottom = new JRadioButton("Bottom");
+        JRadioButton jrRight = new JRadioButton("Derecha");
+        JRadioButton jrTop = new JRadioButton("Arriba");
+        JRadioButton jrBottom = new JRadioButton("Abajo");
 
         ButtonGroup group = new ButtonGroup();
         group.add(jrLeft);
@@ -159,9 +159,9 @@ public class FormSetting extends Form {
 
     private Component createModalDefaultOption() {
         JPanel panel = new JPanel(new MigLayout());
-        panel.setBorder(new TitledBorder("Default modal option"));
-        JCheckBox chAnimation = new JCheckBox("Animation enable");
-        JCheckBox chCloseOnPressedEscape = new JCheckBox("Close on pressed escape");
+        panel.setBorder(new TitledBorder("Opción modal predeterminada"));
+        JCheckBox chAnimation = new JCheckBox("Habilitar animación");
+        JCheckBox chCloseOnPressedEscape = new JCheckBox("Cerrar al presionar esc");
         chAnimation.setSelected(ModalDialog.getDefaultOption().isAnimationEnabled());
         chCloseOnPressedEscape.setSelected(ModalDialog.getDefaultOption().isCloseOnPressedEscape());
 
@@ -186,7 +186,7 @@ public class FormSetting extends Form {
             "Demo.accent.orange", "Demo.accent.yellow", "Demo.accent.green",
     };
     private static String[] accentColorNames = {
-            "Default", "Blue", "Purple", "Red", "Orange", "Yellow", "Green",
+            "Default", "Azul", "Morado", "Rojo", "Naranja", "Amarillo", "Verde",
     };
     private final JToggleButton[] accentColorButtons = new JToggleButton[accentColorKeys.length];
     private JToggleButton accentColorCustomButton;
@@ -194,7 +194,7 @@ public class FormSetting extends Form {
 
     private Component createAccentColor() {
         JPanel panel = new JPanel(new MigLayout());
-        panel.setBorder(new TitledBorder("Accent color"));
+        panel.setBorder(new TitledBorder("Color de Accent"));
         ButtonGroup group = new ButtonGroup();
         JToolBar toolBar = new JToolBar();
         toolBar.putClientProperty(FlatClientProperties.STYLE, "" +
@@ -243,11 +243,11 @@ public class FormSetting extends Form {
     }
 
     private JToggleButton createCustomAccentColor() {
-        JToggleButton button = new JToggleButton(new FlatSVGIcon("raven/modal/demo/icons/color.svg", 16, 16));
+        JToggleButton button = new JToggleButton(new FlatSVGIcon("CoolboxApp/demo/icons/color.svg", 16, 16));
         button.addActionListener(e -> {
             ColorPicker colorPicker = new ColorPicker(DemoPreferences.accentColor);
             colorPicker.applyColorPaletteType(ColorPaletteType.TAILWIND);
-            Color color = ColorPicker.showDialog(this, "Select Color", colorPicker);
+            Color color = ColorPicker.showDialog(this, "Seleccionar Color", colorPicker);
             if (color != null) {
                 DemoPreferences.accentColor = color;
                 oldSelected = null;
@@ -267,28 +267,28 @@ public class FormSetting extends Form {
         JPanel lineStyleOption = new JPanel(new MigLayout("wrap", "[200]"));
         JPanel lineColorOption = new JPanel(new MigLayout("wrap", "[200]"));
 
-        lineStyle.setBorder(new TitledBorder("Drawer line style"));
-        lineStyleOption.setBorder(new TitledBorder("Line style option"));
-        lineColorOption.setBorder(new TitledBorder("Color option"));
+        lineStyle.setBorder(new TitledBorder("Drawer estilos de linea"));
+        lineStyleOption.setBorder(new TitledBorder("Opciones de estilos de linea"));
+        lineColorOption.setBorder(new TitledBorder("Opciones de color"));
 
         ButtonGroup groupStyle = new ButtonGroup();
-        JRadioButton jrCurvedStyle = new JRadioButton("Curved line style");
-        JRadioButton jrStraightDotStyle = new JRadioButton("Straight dot line style", true);
+        JRadioButton jrCurvedStyle = new JRadioButton("Estilo de línea curva");
+        JRadioButton jrStraightDotStyle = new JRadioButton("Estilo de línea de puntos", true);
         groupStyle.add(jrCurvedStyle);
         groupStyle.add(jrStraightDotStyle);
 
         ButtonGroup groupStyleOption = new ButtonGroup();
-        JRadioButton jrStyleOption1 = new JRadioButton("Rectangle");
-        JRadioButton jrStyleOption2 = new JRadioButton("Ellipse", true);
+        JRadioButton jrStyleOption1 = new JRadioButton("Rectangulo");
+        JRadioButton jrStyleOption2 = new JRadioButton("Elipse", true);
         groupStyleOption.add(jrStyleOption1);
         groupStyleOption.add(jrStyleOption2);
 
-        JCheckBox chPaintLineColor = new JCheckBox("Paint selected line color");
+        JCheckBox chPaintLineColor = new JCheckBox("Pintar con el color de la línea seleccionada");
 
         jrCurvedStyle.addActionListener(e -> {
             if (jrCurvedStyle.isSelected()) {
-                jrStyleOption1.setText("Line");
-                jrStyleOption2.setText("Curved");
+                jrStyleOption1.setText("Linea");
+                jrStyleOption2.setText("Curva");
                 boolean round = jrStyleOption2.isSelected();
                 boolean paintSelectedLine = chPaintLineColor.isSelected();
                 setDrawerLineStyle(true, round, paintSelectedLine);
@@ -296,8 +296,8 @@ public class FormSetting extends Form {
         });
         jrStraightDotStyle.addActionListener(e -> {
             if (jrStraightDotStyle.isSelected()) {
-                jrStyleOption1.setText("Rectangle");
-                jrStyleOption2.setText("Ellipse");
+                jrStyleOption1.setText("Rectangulo");
+                jrStyleOption2.setText("Elipse");
                 boolean round = jrStyleOption2.isSelected();
                 boolean paintSelectedLine = chPaintLineColor.isSelected();
                 setDrawerLineStyle(false, round, paintSelectedLine);
@@ -400,7 +400,7 @@ public class FormSetting extends Form {
         final PanelThemes panelThemes = new PanelThemes();
         JPanel panelHeader = new JPanel(new MigLayout("fillx,insets 3", "[grow 0]push[]"));
         panelHeader.add(new JLabel("Themes"));
-        JComboBox combo = new JComboBox(new Object[]{"All", "Light", "Dark"});
+        JComboBox combo = new JComboBox(new Object[]{"Todos", "Claros", "Oscuros"});
         combo.addActionListener(e -> {
             panelThemes.updateThemesList(combo.getSelectedIndex());
         });
