@@ -52,14 +52,14 @@ public class Card extends JPanel {
         JLabel title = new JLabel(employee.getProfile().getName());
         title.putClientProperty(FlatClientProperties.STYLE, "" +
                 "font:bold +1;");
-        JTextPane description = new JTextPane();
-        description.setEditable(false);
-        description.putClientProperty(FlatClientProperties.STYLE, "" +
+        JTextPane email = new JTextPane();
+        email.setEditable(false);
+        email.putClientProperty(FlatClientProperties.STYLE, "" +
                 "border:0,0,0,0;" +
                 "background:null;" +
                 "[light]foreground:tint($Label.foreground,30%);" +
                 "[dark]foreground:shade($Label.foreground,30%)");
-        description.setText(employee.getDescription());
+        email.setText(employee.getEmail());
 
         JButton button = new JButton("View");
         button.addActionListener(e -> event.accept(employee));
@@ -72,7 +72,7 @@ public class Card extends JPanel {
                 "background:null;");
 
         body.add(title);
-        body.add(description);
+        body.add(email);
         body.add(button);
         return body;
     }

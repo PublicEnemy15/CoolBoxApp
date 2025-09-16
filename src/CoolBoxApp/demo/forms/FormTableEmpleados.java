@@ -53,7 +53,9 @@ public class FormTableEmpleados extends Form {
         JPanel panel = new JPanel(new MigLayout("fillx,wrap,insets 10 0 10 0", "[fill]", "[][][]0[fill,grow]"));
 
         // columnas
-        Object columns[] = new Object[]{"SELECT", "#", "NOMBRE", "FECHA", "SALARIO", "POSICION", "EMAIL"};
+        Object columns[] = new Object[]{
+            "SELECT", "#", "NOMBRE", "FECHA", "SALARIO", "POSICION", "EMAIL", "TELEFONO"
+        };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -72,19 +74,20 @@ public class FormTableEmpleados extends Form {
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        // tamaños de columnas
+        // tamanios de columnas
         table.getColumnModel().getColumn(0).setMaxWidth(50);
         table.getColumnModel().getColumn(1).setMaxWidth(50);
         table.getColumnModel().getColumn(2).setPreferredWidth(150);
         table.getColumnModel().getColumn(5).setPreferredWidth(100);
         table.getColumnModel().getColumn(6).setPreferredWidth(250);
+        table.getColumnModel().getColumn(7).setPreferredWidth(150);
 
-        // configuración de tabla
+        // configuracion de tabla
         table.getTableHeader().setReorderingAllowed(false);
         table.setDefaultRenderer(ModelProfile.class, new TableProfileCellRenderer(table));
         table.getColumnModel().getColumn(0).setHeaderRenderer(new CheckBoxTableHeaderRenderer(table, 0));
 
-        // alineación cabecera
+        // alineacion cabecera
         table.getTableHeader().setDefaultRenderer(new TableHeaderAlignment(table) {
             @Override
             protected int getAlignment(int column) {
@@ -98,7 +101,7 @@ public class FormTableEmpleados extends Form {
         table.putClientProperty(FlatClientProperties.STYLE, "rowHeight:70;showHorizontalLines:true;intercellSpacing:0,1;cellFocusColor:$TableHeader.hoverBackground;selectionBackground:$TableHeader.hoverBackground;selectionInactiveBackground:$TableHeader.hoverBackground;selectionForeground:$Table.foreground;");
         scrollPane.getVerticalScrollBar().putClientProperty(FlatClientProperties.STYLE, "trackArc:$ScrollBar.thumbArc;trackInsets:3,3,3,3;thumbInsets:3,3,3,3;background:$Table.background;");
 
-        // título
+        // titulo
         JLabel title = new JLabel("Area de empleados");
         title.putClientProperty(FlatClientProperties.STYLE, "font:bold +2");
         panel.add(title, "gapx 20");
