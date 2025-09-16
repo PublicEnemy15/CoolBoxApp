@@ -11,7 +11,7 @@ import SantaCruzDept.toast.option.ToastStyle;
 import SantaCruzDept.option.Location;
 
 import CoolBoxApp.demo.component.LabelButton;
-import CoolBoxApp.demo.simple.SimpleCustomToast;
+import inputs.SimpleCustomToast;
 import CoolBoxApp.demo.system.Form;
 import CoolBoxApp.demo.utils.SystemForm;
 

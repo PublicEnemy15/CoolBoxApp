@@ -10,9 +10,9 @@ import SantaCruzDept.option.Location;
 import SantaCruzDept.option.Option;
 
 import CoolBoxApp.demo.component.LabelButton;
-import CoolBoxApp.demo.simple.SimpleInputForms;
-import CoolBoxApp.demo.simple.SimpleInputForms2;
-import CoolBoxApp.demo.simple.SimpleMessageModal;
+import CoolBoxApp.demo.simple.InputProductos;
+import inputs.SimpleInputForms2;
+import inputs.SimpleMessageModal;
 import CoolBoxApp.demo.system.Form;
 import CoolBoxApp.demo.utils.SystemForm;
 
@@ -232,7 +232,7 @@ public class FormModal extends Form {
     private void showModalSlide(Option option) {
         final String id = "input";
         ModalDialog.showModal(this, new SimpleModalBorder(
-                new SimpleInputForms(), "Sample Input Forms", SimpleModalBorder.YES_NO_CANCEL_OPTION,
+                new InputProductos(), "Sample Input Forms", SimpleModalBorder.YES_NO_CANCEL_OPTION,
                 (controller, action) -> {
                     if (action == SimpleModalBorder.YES_OPTION) {
 

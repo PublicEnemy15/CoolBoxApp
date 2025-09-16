@@ -24,13 +24,7 @@ public class SampleData {
 
     public static List<ModelEmployee> getSampleEmployeeData(boolean defaultIcon) {
         List<ModelEmployee> list = new ArrayList<>();
-        list.add(new ModelEmployee("24-Agosto-2025", 10, "Vago", "Vago =Void de profesion", new ModelProfile(getProfileIcon("profile_1.jpg", defaultIcon), "Yefferson Adrian", "Villa el Salvador")));
-        return list;
-    }
-
-    public static List<ModelEmployee> getSampleBasicEmployeeData() {
-        List<ModelEmployee> list = new ArrayList<>();
-        list.add(new ModelEmployee("24-Agosto-2025", 1750, "Vago", "Vago =Void de profesion", new ModelProfile(null, "Yefferson Adrian", "Villa el Salvador")));
+        list.add(new ModelEmployee("24-Agosto-2025", 10, "Vago", "SoyBurrito@burrito.void", new ModelProfile(getProfileIcon("profile_1.jpg", defaultIcon), "Yefferson Adrian", "Villa el Salvador")));
         return list;
     }
 

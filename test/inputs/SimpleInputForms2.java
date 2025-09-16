@@ -1,4 +1,4 @@
-package CoolBoxApp.demo.simple;
+package inputs;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import net.miginfocom.swing.MigLayout;

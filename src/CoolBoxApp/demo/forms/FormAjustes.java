@@ -31,9 +31,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 
 @SystemForm(name = "Ajustes", description = "Ajustes de la aplicacion", tags = {"themes", "options"})
-public class FormSetting extends Form {
+public class FormAjustes extends Form {
 
-    public FormSetting() {
+    public FormAjustes() {
         init();
     }
 

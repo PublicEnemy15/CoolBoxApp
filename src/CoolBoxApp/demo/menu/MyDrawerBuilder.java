@@ -130,7 +130,7 @@ public class MyDrawerBuilder extends SimpleDrawerBuilder {
                 new Item.Label("GESTION"),
                 new Item("Administrar", "forms.svg")
                         .subMenu("Administrar Empleados", FormTableEmpleados.class)
-                        .subMenu("Administrar Productos", FormTable.class)
+                        .subMenu("Administrar Productos", FormTablaProductos.class)
                         .subMenu("Notificar Item de Almacen", FormNotificar.class),
                 
                 new Item("Area de ventas", "components.svg")
@@ -167,7 +167,7 @@ public class MyDrawerBuilder extends SimpleDrawerBuilder {
                         .subMenu("No definido")
                         .subMenu("No definido")
                         .subMenu("No definido"),
-                new Item("Ajustes", "setting.svg", FormSetting.class),
+                new Item("Ajustes", "setting.svg", FormAjustes.class),
                 new Item("About", "about.svg"),
                 new Item("Logout", "logout.svg")
         };

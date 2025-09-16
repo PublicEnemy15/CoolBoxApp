@@ -11,7 +11,7 @@ import SantaCruzDept.option.Option;
 import CoolBoxApp.demo.model.ModelEmployee;
 import CoolBoxApp.demo.model.ModelProfile;
 import CoolBoxApp.demo.sample.SampleData;
-import CoolBoxApp.demo.simple.SimpleInputForms;
+import CoolBoxApp.demo.simple.InputProductos;
 import CoolBoxApp.demo.system.Form;
 import CoolBoxApp.demo.utils.SystemForm;
 import CoolBoxApp.demo.utils.table.CheckBoxTableHeaderRenderer;
@@ -23,9 +23,9 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 @SystemForm(name = "Tabla de productos", description = "Area de administracion de productos", tags = {"list"})
-public class FormTable extends Form {
+public class FormTablaProductos extends Form {
 
-    public FormTable() {
+    public FormTablaProductos() {
         init();
     }
 
@@ -99,7 +99,7 @@ public class FormTable extends Form {
         scrollPane.getVerticalScrollBar().putClientProperty(FlatClientProperties.STYLE, "trackArc:$ScrollBar.thumbArc;trackInsets:3,3,3,3;thumbInsets:3,3,3,3;background:$Table.background;");
 
         // título
-        JLabel title = new JLabel("Area de empleados");
+        JLabel title = new JLabel("Area de productos");
         title.putClientProperty(FlatClientProperties.STYLE, "font:bold +2");
         panel.add(title, "gapx 20");
 
@@ -146,7 +146,7 @@ public class FormTable extends Form {
                 .setLocation(Location.TRAILING, Location.TOP)
                 .setAnimateDistance(0.7f, 0);
         ModalDialog.showModal(this, new SimpleModalBorder(
-                new SimpleInputForms(), "Crear", SimpleModalBorder.YES_NO_OPTION,
+                new InputProductos(), "Crear", SimpleModalBorder.YES_NO_OPTION,
                 (controller, action) -> {}), option);
     }
 }

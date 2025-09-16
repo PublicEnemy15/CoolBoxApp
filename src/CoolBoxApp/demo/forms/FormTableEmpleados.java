@@ -11,7 +11,7 @@ import SantaCruzDept.option.Option;
 import CoolBoxApp.demo.model.ModelEmployee;
 import CoolBoxApp.demo.model.ModelProfile;
 import CoolBoxApp.demo.sample.SampleData;
-import CoolBoxApp.demo.simple.SimpleInputForms;
+import CoolBoxApp.demo.simple.InputEmpleados;
 import CoolBoxApp.demo.system.Form;
 import CoolBoxApp.demo.utils.SystemForm;
 import CoolBoxApp.demo.utils.table.CheckBoxTableHeaderRenderer;
@@ -53,7 +53,7 @@ public class FormTableEmpleados extends Form {
         JPanel panel = new JPanel(new MigLayout("fillx,wrap,insets 10 0 10 0", "[fill]", "[][][]0[fill,grow]"));
 
         // columnas
-        Object columns[] = new Object[]{"SELECT", "#", "NOMBRE", "FECHA", "SALARIO", "POSICION", "DESCRIPCION"};
+        Object columns[] = new Object[]{"SELECT", "#", "NOMBRE", "FECHA", "SALARIO", "POSICION", "EMAIL"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -126,7 +126,7 @@ public class FormTableEmpleados extends Form {
         JTextField txtSearch = new JTextField();
         txtSearch.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Buscar...");
         txtSearch.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSVGIcon("CoolBoxApp/demo/icons/search.svg", 0.4f));
-        JButton cmdCreate = new JButton("Crear");
+        JButton cmdCreate = new JButton("Registrar");
         JButton cmdEdit = new JButton("Editar");
         JButton cmdDelete = new JButton("Eliminar");
 
@@ -146,7 +146,7 @@ public class FormTableEmpleados extends Form {
                 .setLocation(Location.TRAILING, Location.TOP)
                 .setAnimateDistance(0.7f, 0);
         ModalDialog.showModal(this, new SimpleModalBorder(
-                new SimpleInputForms(), "Crear", SimpleModalBorder.YES_NO_OPTION,
+                new InputEmpleados(), "Registro de Empleados", SimpleModalBorder.YES_NO_OPTION,
                 (controller, action) -> {}), option);
     }
 }

@@ -10,8 +10,8 @@ import SantaCruzDept.extras.SlidePaneTransition;
 import SantaCruzDept.slider.PanelSlider;
 
 import CoolBoxApp.demo.component.LabelButton;
-import CoolBoxApp.demo.simple.SimpleInputForms;
-import CoolBoxApp.demo.simple.SimpleInputForms2;
+import CoolBoxApp.demo.simple.InputProductos;
+import inputs.SimpleInputForms2;
 import CoolBoxApp.demo.system.Form;
 import CoolBoxApp.demo.utils.SystemForm;
 
@@ -130,7 +130,7 @@ public class FormSlidePane extends Form {
         LabelButton lbTest2 = new LabelButton("Show slide-2");
 
         lbTest1.addOnClick(o -> {
-            slidePane.addSlide(new SimpleInputForms(), getTransition());
+            slidePane.addSlide(new InputProductos(), getTransition());
         });
         lbTest2.addOnClick(o -> {
             slidePane.addSlide(new SimpleInputForms2(), getTransition());
@@ -155,7 +155,7 @@ public class FormSlidePane extends Form {
             }
         };
         slidePane = new SlidePane(layoutSize);
-        slidePane.addSlide(new SimpleInputForms());
+        slidePane.addSlide(new InputProductos());
         panel.add(slidePane);
         return panel;
     }

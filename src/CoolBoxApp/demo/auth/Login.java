@@ -127,7 +127,7 @@ public class Login extends Form {
     private ModelUser getUser(String user, String password) {
 
         // Solo para probar.
-        // Ingrese cualquier usuario y la contraseña predeterminada es admin.
+        // Ingrese cualquier usuario y la contrasenia predeterminada es admin.
         // usuario='personal' contraseña='123' si queremos probar el menú de validación para el rol personal.
 
         if (user.equals("staff") && password.equals("123")) {
